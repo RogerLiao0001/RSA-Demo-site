@@ -1,10 +1,60 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <link rel="stylesheet" href="./style.css" />  <!-- 確保有加 ./ -->
+  <link rel="stylesheet" href="./style.css" />
   <meta charset="UTF-8" />
   <title>廖誌晨的超級RSA Demo - 全流程公開</title>
-
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    h1, h2, h3 {
+      margin: 0.8em 0 0.4em 0;
+    }
+    .box {
+      border: 1px solid #ccc;
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    button {
+      padding: 8px 16px;
+      margin: 8px 0;
+      cursor: pointer;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 8px;
+      margin-top: 4px;
+      margin-bottom: 12px;
+      box-sizing: border-box;
+    }
+    pre {
+      background: #f8f8f8;
+      padding: 12px;
+      border-radius: 8px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .note {
+      font-size: 0.9em;
+      color: #666;
+    }
+    .step-title {
+      font-weight: bold;
+      color: #2c3e50;
+      margin-top: 8px;
+    }
+    .step-content {
+      margin-left: 10px;
+      color: #555;
+    }
+  </style>
 </head>
 <body>
 <div class="container">
@@ -325,7 +375,7 @@ document.getElementById("encrypt-button").addEventListener("click", () => {
 
   // 將加密流程也寫入詳細運算
   detailedSteps.innerText += `
- 
+.
 【加密過程】
 明文 m = ${m}
 加密公式: c = m^e mod n
@@ -363,7 +413,7 @@ document.getElementById("decrypt-button").addEventListener("click", () => {
 
   // 將解密流程也寫入詳細運算
   detailedSteps.innerText += `
- 
+ .
 【解密過程】
 密文 c = ${c}
 解密公式: m = c^d mod n
