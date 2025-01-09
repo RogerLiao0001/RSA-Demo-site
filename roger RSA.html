@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8" />
+  <title>廖誌晨的超級RSA Demo - 全流程公開</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    h1, h2, h3 {
+      margin: 0.8em 0 0.4em 0;
+    }
+    .box {
+      border: 1px solid #ccc;
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    button {
+      padding: 8px 16px;
+      margin: 8px 0;
+      cursor: pointer;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 8px;
+      margin-top: 4px;
+      margin-bottom: 12px;
+      box-sizing: border-box;
+    }
+    pre {
+      background: #f8f8f8;
+      padding: 12px;
+      border-radius: 8px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .note {
+      font-size: 0.9em;
+      color: #666;
+    }
+    .step-title {
+      font-weight: bold;
+      color: #2c3e50;
+      margin-top: 8px;
+    }
+    .step-content {
+      margin-left: 10px;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>廖誌晨的超級 RSA Demo - 全流程公開</h1>
+  <p>
+    這是一個教學示範，讓你可以在網頁上直接觀察
+    <strong>RSA</strong> 從「產生質數」到「加解密」的所有主要計算流程。
+    <br>
+    <span class="note">
+      由於此示範僅採用短位元長度（例如 16 位元）與簡易隨機質數產生法，不適用在真實的生產環境。
+    </span>
+  </p>
+
+  <!-- [1] 產生金鑰對 -->
+  <div class="box">
+    <h2>1. 產生金鑰對 (p, q, n, φ(n), e, d)</h2>
+    <button id="generate-keys">產生金鑰對</button>
+    <pre id="keys-info"></pre>
+    <pre id="keys-steps"></pre>
+  </div>
+
+  <!-- [2] RSA 加解密 -->
+  <div class="box">
+    <h2>2. RSA 加解密</h2>
+    <label for="plaintext-input">明文 (請輸入整數)：</label>
+    <input type="text" id="plaintext-input" placeholder="輸入欲加密的整數..." />
+    <button id="encrypt-button">加密</button>
+    <pre id="ciphertext-info"></pre>
+
+    <button id="decrypt-button">解密</button>
+    <pre id="decrypted-info"></pre>
+  </div>
+
+  <!-- [3] 詳細計算流程 (包含中間結果) -->
+  <div class="box">
+    <h2>3. 詳細運算流程</h2>
+    <pre id="detailed-steps"></pre>
+  </div>
+</div>
+
+<script>
+/*
+  ============================================================================
+    工具函式 (大數運算、質數檢查、隨機產生質數、求 GCD、modPow、擴展歐幾里得等)
+  ============================================================================
+*/
+
+/**
+ * 檢查某數是否為質數 (簡易方法，不適合大型數字)
+ * @param {bigint} n 
+ * @returns {boolean}
+ */
+function isPrime(n) {
+  if (n < 2n) return false;
+  // 只檢查到 sqrt(n)
+  let r = sqrt(n);
+  for (let i = 2n; i <= r; i++) {
+    if (n % i === 0n) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
+ * 對 n 做「平方根向下取整」(BigInt 版本)
+ * @param {bigint} n 
+ * @returns {bigint}
+ */
+function sqrt(n) {
+  if (n < 2n) return n;
+  let x0 = n / 2n;
+  let x1 = (x0 + n / x0) / 2n;
+  while (x1 < x0) {
+    x0 = x1;
+    x1 = (x0 + n / x0) / 2n;
+  }
+  return x0;
+}
+
+/**
+ * 隨機產生一個「大約 bitLength 位元」的 BigInt
+ * (此方法為示範用，實務上需使用安全隨機)
+ * @param {number} bitLength - 位元長度
+ * @returns {bigint}
+ */
+function randomBigInt(bitLength) {
+  let min = (1n << BigInt(bitLength - 1));
+  let max = (1n << BigInt(bitLength)) - 1n;
+  let range = max - min + 1n;
+  // 簡易隨機 (Math.random) → 只適合示範
+  let rand = BigInt(Math.floor(Math.random() * Number(range)));
+  return min + rand;
+}
+
+/**
+ * 產生指定 bitLength 的隨機質數
+ * (非常簡易暴力版本，不建議真實使用，僅示範原理)
+ * @param {number} bitLength 
+ * @returns {bigint}
+ */
+function generatePrime(bitLength) {
+  while (true) {
+    let candidate = randomBigInt(bitLength);
+    if (isPrime(candidate)) {
+      return candidate;
+    }
+  }
+}
+
+/**
+ * 計算最大公因數 (GCD)
+ * @param {bigint} a 
+ * @param {bigint} b 
+ * @returns {bigint}
+ */
+function gcd(a, b) {
+  if (b === 0n) return a;
+  return gcd(b, a % b);
+}
+
+/**
+ * (base^exponent) mod modulus (快速冪)
+ * @param {bigint} base 
+ * @param {bigint} exponent 
+ * @param {bigint} modulus 
+ * @returns {bigint}
+ */
+function modPow(base, exponent, modulus) {
+  if (modulus === 1n) return 0n;
+  let result = 1n;
+  let b = base % modulus;
+  let e = exponent;
+  while (e > 0n) {
+    if ((e & 1n) === 1n) {
+      result = (result * b) % modulus;
+    }
+    e = e >> 1n;
+    b = (b * b) % modulus;
+  }
+  return result;
+}
+
+/**
+ * 擴展歐幾里得算法: 求 a, b 的 x, y，使得 a*x + b*y = gcd(a,b)
+ * @param {bigint} a 
+ * @param {bigint} b 
+ * @returns {object} {g, x, y}
+ */
+function extendedGCD(a, b) {
+  if (b === 0n) {
+    return { g: a, x: 1n, y: 0n };
+  }
+  const { g, x: x1, y: y1 } = extendedGCD(b, a % b);
+  return { g, x: y1, y: x1 - (a / b) * y1 };
+}
+
+/**
+ * 求乘法反元素 (mod m)，即 d = a^(-1) mod m
+ * 使得 (a*d) ≡ 1 (mod m)
+ * @param {bigint} a 
+ * @param {bigint} m 
+ * @returns {bigint}
+ */
+function modInverse(a, m) {
+  const { g, x } = extendedGCD(a, m);
+  if (g !== 1n) {
+    throw new Error("無法求反元素：a 與 m 不互質");
+  }
+  return (x % m + m) % m;
+}
+
+/*
+  ============================================================================
+    全域變數：儲存 p, q, n, phiN, e, d
+  ============================================================================
+*/
+let globalP = null;
+let globalQ = null;
+let globalN = null;
+let globalPhiN = null;
+let globalE = null;
+let globalD = null;
+
+// 取得網頁元素
+const keysInfo = document.getElementById("keys-info");         // 顯示最終金鑰資訊
+const keysSteps = document.getElementById("keys-steps");       // 顯示產生金鑰的中間步驟
+const ciphertextInfo = document.getElementById("ciphertext-info");
+const decryptedInfo = document.getElementById("decrypted-info");
+const detailedSteps = document.getElementById("detailed-steps");
+
+/*
+  ============================================================================
+    監聽事件 - 產生金鑰對
+  ============================================================================
+*/
+document.getElementById("generate-keys").addEventListener("click", () => {
+  // 每次按下按鈕，先清空顯示
+  keysInfo.innerText = "";
+  keysSteps.innerText = "";
+  ciphertextInfo.innerText = "";
+  decryptedInfo.innerText = "";
+  detailedSteps.innerText = "";
+
+  // 這裡為示範，bitLength 設得很小 (16 bits)，實務請使用 >= 2048 bits
+  const bitLength = 16;
+  let processLog = [];  // 收集每個步驟的資訊
+
+  processLog.push(`計算過程：`);
+  processLog.push(`開始產生兩個質數 p, q (位元長度 ~ ${bitLength} bits)...`);
+
+  // 1. 產生 p, q
+  let p = generatePrime(bitLength);
+  let q = generatePrime(bitLength);
+  globalP = p;
+  globalQ = q;
+
+  processLog.push(`取得質數 p = ${p}`);
+  processLog.push(`取得質數 q = ${q}`);
+
+  // 2. n = p * q
+  let n = p * q;
+  globalN = n;
+  processLog.push(`計算 n = p * q = ${n}`);
+
+  // 3. φ(n) = (p-1)(q-1)
+  let phiN = (p - 1n) * (q - 1n);
+  globalPhiN = phiN;
+  processLog.push(`計算 φ(n) = (p - 1)*(q - 1) = ${phiN}`);
+
+  // 4. 選擇 e (預設 65537)
+  let e = 65537n;
+  // 檢查 gcd(e, phiN) 是否為 1
+  if (gcd(e, phiN) !== 1n) {
+    // 若不互質，理論上應該重新產生 p, q 或換 e，但這裡簡化示範
+    processLog.push(`公鑰 e 與 φ(n) 不互質！請重新嘗試產生金鑰。`);
+    keysSteps.innerText = processLog.join("\n");
+    return;
+  }
+  globalE = e;
+  processLog.push(`選擇公鑰 e = ${e} (通常固定採用 65537)`);
+
+  // 5. 私鑰 d = e^(-1) mod φ(n) => e*d ≡ 1 (mod φ(n))
+  let d = modInverse(e, phiN);
+  globalD = d;
+  processLog.push(`計算私鑰 d = e^(-1) mod φ(n) = ${d}`);
+  processLog.push(`(驗證: e*d mod φ(n) = ${(e * d) % phiN})`);
+
+  // 最後將結果顯示在網頁上
+  keysInfo.innerText = `
+[金鑰資訊]
+p = ${p}
+q = ${q}
+n = ${n}
+φ(n) = ${phiN}
+e = ${e}
+d = ${d}
+  `.trim();
+
+  // 詳細過程
+  keysSteps.innerText = processLog.join("\n");
+
+  // 同時在「詳細運算流程」也放一份
+  detailedSteps.innerText = `
+【產生金鑰對的過程】
+
+1) 產生質數 p, q
+   p = ${p}
+   q = ${q}
+
+2) 計算 n = p * q
+   n = ${n}
+
+3) 計算 φ(n) = (p - 1)*(q - 1)
+   φ(n) = ${phiN}
+
+4) 設定公鑰 e (預設 65537)
+   e = ${e}
+
+5) 計算私鑰 d，使 e*d ≡ 1 (mod φ(n))
+   d = e^(-1) mod φ(n) = ${d}
+`.trim();
+});
+
+/*
+  ============================================================================
+    監聽事件 - 加密
+  ============================================================================
+*/
+document.getElementById("encrypt-button").addEventListener("click", () => {
+  // 先清空可能的舊結果
+  ciphertextInfo.innerText = "";
+
+  // 檢查是否已有金鑰
+  if (!globalN || !globalE) {
+    alert("請先產生金鑰對");
+    return;
+  }
+
+  // 取得明文
+  const plaintextInput = document.getElementById("plaintext-input").value.trim();
+  if (!plaintextInput) {
+    alert("請輸入明文(整數)");
+    return;
+  }
+
+  let m;
+  try {
+    m = BigInt(plaintextInput);
+  } catch {
+    alert("明文必須為整數");
+    return;
+  }
+
+  // m^e mod n
+  let c = modPow(m, globalE, globalN);
+  ciphertextInfo.innerText = `加密後密文 c = ${c}`;
+
+  // 將加密流程也寫入詳細運算
+  detailedSteps.innerText += `
+ 
+【加密過程】
+明文 m = ${m}
+加密公式: c = m^e mod n
+c = ${m}^${globalE} mod ${globalN} = ${c}
+`.trim();
+});
+
+/*
+  ============================================================================
+    監聽事件 - 解密
+  ============================================================================
+*/
+document.getElementById("decrypt-button").addEventListener("click", () => {
+  // 先清空可能的舊結果
+  decryptedInfo.innerText = "";
+
+  // 檢查加密結果是否存在
+  const ciphertextText = ciphertextInfo.innerText;
+  if (!ciphertextText) {
+    alert("請先執行加密，產生密文");
+    return;
+  }
+
+  // 從字串中抓取 c 的值
+  const match = ciphertextText.match(/c = (\d+)/);
+  if (!match || !match[1]) {
+    alert("未找到密文資訊，請先執行加密。");
+    return;
+  }
+  let c = BigInt(match[1]);
+
+  // c^d mod n
+  let mDecrypted = modPow(c, globalD, globalN);
+  decryptedInfo.innerText = `解密後明文 m = ${mDecrypted}`;
+
+  // 將解密流程也寫入詳細運算
+  detailedSteps.innerText += `
+ 
+【解密過程】
+密文 c = ${c}
+解密公式: m = c^d mod n
+m = ${c}^${globalD} mod ${globalN} = ${mDecrypted}
+`.trim();
+});
+</script>
+</body>
+</html>
