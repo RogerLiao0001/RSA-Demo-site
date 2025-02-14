@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="./style.css" />
+  <meta charset="UTF-8" />
+  <title>廖誌晨的超級 ECC Demo - 全流程公開</title>
+  <style>
+    /* 如有需要，可在此加入局部樣式，但主要採用 style.css */
+    nav {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    nav a {
+      margin: 0 10px;
+      text-decoration: none;
+      color: #3498db;
+      font-weight: bold;
+    }
+    nav a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <!-- 導航區塊 -->
+  <nav>
+    <a href="index.html">RSA Demo</a> |
+    <a href="ecc.html">ECC Demo</a>
+  </nav>
+  
+  <h1>廖誌晨的超級 ECC Demo - 全流程公開</h1>
+  <p>
+    這是一個教學示範，讓你可以在網頁上直接觀察
+    <strong>橢圓曲線密碼學 (ECC)</strong> 的關鍵運算流程，
+    包括生成公私鑰 (基於 ECDLP) 以及簽章與驗證 (基於 ECDSA) 的計算過程。
+    <br>
+    <span class="note">
+      為了示範目的，此演示採用簡化的參數：域質數 p = 17，曲線方程 y² = x³ + 2x + 2 (mod 17)；固定基點 G = (5,1)。
+    </span>
+  </p>
+  
+  <!-- [1] ECC 金鑰生成 -->
+  <div class="box">
+    <h2>1. ECC 金鑰生成 (d, Q = d * G)</h2>
+    <button id="generate-ecc-keys">產生 ECC 金鑰對</button>
+    <pre id="ecc-keys-info"></pre>
+    <pre id="ecc-keys-steps"></pre>
+  </div>
+  
+  <!-- [2] ECDSA 簽章與驗證 -->
+  <div class="box">
+    <h2>2. ECDSA 簽章與驗證</h2>
+    <label for="ecc-message-input">訊息 m (請輸入整數)：</label>
+    <input type="text" id="ecc-message-input" placeholder="輸入欲簽章的整數..." />
+    <button id="ecc-sign-button">簽章</button>
+    <pre id="ecc-sign-info"></pre>
+    
+    <button id="ecc-verify-button">驗證簽章</button>
+    <pre id="ecc-verify-info"></pre>
+  </div>
+  
+  <!-- [3] 詳細運算流程 -->
+  <div class="box">
+    <h2>3. 詳細運算流程</h2>
+    <pre id="ecc-detailed-steps"></pre>
+  </div>
+</div>
+
+<script>
+  // ECC 演示參數（簡化用的小數值）
+  const eccP = 17n;     // 有限域 F_p，p 為質數
+  const eccA = 2n;      // 橢圓曲線方程中的 a
+  const eccB = 2n;      // 橢圓曲線方程中的 b
+  // 固定基點 G（必須滿足曲線方程）
+  const eccG = { x: 5n, y: 1n };
+
+  // 表示無窮遠點用 null
+  // ECC 點加法 (適用於曲線: y^2 = x^3 + a*x + b mod p)
+  function eccPointAdd(P, Q, p, a) {
+    if (P === null) return Q;
+    if (Q === null) return P;
+    if (P.x === Q.x && (P.y + Q.y) % p === 0n) {
+      // P 與 -P 相加得到無窮遠點
+      return null;
+    }
+    let lambda;
+    if (P.x === Q.x && P.y === Q.y) {
+      // 點倍乘（切線計算）
+      const num = (3n * P.x * P.x + a) % p;
+      const den = (2n * P.y) % p;
+      lambda = (num * modInverse(den, p)) % p;
+    } else {
+      // 兩點加法
+      const num = (Q.y - P.y + p) % p;
+      const den = (Q.x - P.x + p) % p;
+      lambda = (num * modInverse(den, p)) % p;
+    }
+    const xR = (lambda * lambda - P.x - Q.x) % p;
+    const yR = (lambda * (P.x - xR) - P.y) % p;
+    return { x: (xR + p) % p, y: (yR + p) % p };
+  }
+
+  // ECC 標量乘法：利用 double & add 算法計算 k * P
+  function eccScalarMult(k, P, p, a) {
+    let N = P;
+    let Q = null; // 無窮遠點
+    while (k > 0n) {
+      if (k & 1n) {
+        Q = eccPointAdd(Q, N, p, a);
+      }
+      N = eccPointAdd(N, N, p, a);
+      k = k >> 1n;
+    }
+    return Q;
+  }
+
+  // 同 RSA 中的 modInverse (重複定義)
+  function modInverse(a, m) {
+    function extendedGCD(a, b) {
+      if (b === 0n) return { g: a, x: 1n, y: 0n };
+      const { g, x: x1, y: y1 } = extendedGCD(b, a % b);
+      return { g, x: y1, y: x1 - (a / b) * y1 };
+    }
+    const { g, x } = extendedGCD(a, m);
+    if (g !== 1n) {
+      throw new Error("modInverse does not exist");
+    }
+    return (x % m + m) % m;
+  }
+
+  // 計算點 P 的階數：從 P 開始不斷加 P 直到得到無窮遠點
+  function eccPointOrder(P, p, a) {
+    let Q = P;
+    let order = 1n;
+    while (Q !== null) {
+      Q = eccPointAdd(Q, P, p, a);
+      order += 1n;
+      if (order > 100n) break; // demo 限制循環
+    }
+    return order;
+  }
+
+  // 全域變數：儲存 ECC 金鑰
+  let eccPrivateKey = null; // 私鑰 d
+  let eccPublicKey = null;  // 公鑰 Q = d * G
+  let eccOrder = null;      // G 的階數
+
+  // 取得頁面元素
+  const eccKeysInfo = document.getElementById("ecc-keys-info");
+  const eccKeysSteps = document.getElementById("ecc-keys-steps");
+  const eccDetailedSteps = document.getElementById("ecc-detailed-steps");
+  const eccSignInfo = document.getElementById("ecc-sign-info");
+  const eccVerifyInfo = document.getElementById("ecc-verify-info");
+
+  // [1] ECC 金鑰生成
+  document.getElementById("generate-ecc-keys").addEventListener("click", () => {
+    eccKeysInfo.innerText = "";
+    eccKeysSteps.innerText = "";
+    eccDetailedSteps.innerText = "";
+    eccSignInfo.innerText = "";
+    eccVerifyInfo.innerText = "";
+
+    let processLog = [];
+    processLog.push(`使用橢圓曲線: y^2 = x^3 + ${eccA}x + ${eccB} (mod ${eccP})`);
+    processLog.push(`固定基點 G = (${eccG.x}, ${eccG.y})`);
+
+    // 計算 G 的階數
+    eccOrder = eccPointOrder(eccG, eccP, eccA);
+    processLog.push(`計算 G 的階數 order = ${eccOrder}`);
+
+    // 示範選擇私鑰 d，隨機取 [1, order-1]
+    let d = BigInt(Math.floor(Math.random() * Number(eccOrder - 1n))) + 1n;
+    eccPrivateKey = d;
+    processLog.push(`選擇私鑰 d = ${d}`);
+
+    // 計算公鑰 Q = d * G
+    let Q = eccScalarMult(d, eccG, eccP, eccA);
+    eccPublicKey = Q;
+    processLog.push(`計算公鑰 Q = d * G = (${Q.x}, ${Q.y})`);
+
+    eccKeysInfo.innerText = `
+[ECC 金鑰資訊]
+私鑰 d = ${d}
+公鑰 Q = (${Q.x}, ${Q.y})
+G 的階數 order = ${eccOrder}
+    `.trim();
+
+    eccKeysSteps.innerText = processLog.join("\n");
+    eccDetailedSteps.innerText = `
+【ECC 金鑰生成過程】
+
+1) 橢圓曲線: y^2 = x^3 + ${eccA}x + ${eccB} (mod ${eccP})
+2) 固定基點: G = (${eccG.x}, ${eccG.y})
+3) 計算 G 的階數: order = ${eccOrder}
+4) 隨機選擇私鑰 d ∈ [1, order-1]: d = ${d}
+5) 計算公鑰 Q = d * G = (${Q.x}, ${Q.y})
+    `.trim();
+  });
+
+  // [2] ECDSA 簽章與驗證
+  document.getElementById("ecc-sign-button").addEventListener("click", () => {
+    // 每次簽章前清空前次簽章與詳細流程區
+    eccSignInfo.innerText = "";
+    eccVerifyInfo.innerText = "";
+    eccDetailedSteps.innerText = "";
+
+    if (eccPrivateKey === null) {
+      alert("請先產生 ECC 金鑰對");
+      return;
+    }
+
+    const messageInput = document.getElementById("ecc-message-input").value.trim();
+    if (!messageInput) {
+      alert("請輸入訊息(整數)");
+      return;
+    }
+    let m;
+    try {
+      m = BigInt(messageInput);
+    } catch {
+      alert("訊息必須為整數");
+      return;
+    }
+    let processLog = [];
+    processLog.push(`訊息 m = ${m}`);
+
+    // 選擇隨機 k ∈ [1, order-1] 用於簽章
+    let k = BigInt(Math.floor(Math.random() * Number(eccOrder - 1n))) + 1n;
+    processLog.push(`選擇隨機數 k = ${k}`);
+
+    // 計算 R = k * G = (x1, y1)
+    let R = eccScalarMult(k, eccG, eccP, eccA);
+    processLog.push(`計算 R = k * G = (${R.x}, ${R.y})`);
+
+    // 定義 r 為 R 的 x 坐標 mod order
+    let r = R.x % eccOrder;
+    processLog.push(`r = R.x mod order = ${R.x} mod ${eccOrder} = ${r}`);
+    if (r === 0n) {
+      alert("r = 0, 請重新產生簽章");
+      return;
+    }
+    // 計算 k 的反元素 k^{-1} mod order
+    let kInv = modInverse(k, eccOrder);
+    processLog.push(`計算 k 的反元素 k^{-1} mod order = ${kInv}`);
+
+    // 計算 s = k^{-1} * (m + d * r) mod order
+    let s = (kInv * (m + eccPrivateKey * r)) % eccOrder;
+    processLog.push(`計算 s = k^{-1} * (m + d * r) mod order = ${s}`);
+    if (s === 0n) {
+      alert("s = 0, 請重新產生簽章");
+      return;
+    }
+    eccSignInfo.innerText = `
+[ECDSA 簽章]
+r = ${r}
+s = ${s}
+    `.trim();
+
+    eccDetailedSteps.innerText = `
+【ECDSA 簽章過程】
+
+1) 訊息 m = ${m}
+2) 隨機選擇 k = ${k}
+3) 計算 R = k * G = (${R.x}, ${R.y})
+4) 取 r = R.x mod order = ${r}
+5) 計算 k^{-1} mod order = ${kInv}
+6) 計算 s = k^{-1} * (m + d * r) mod order = ${s}
+    `.trim();
+
+    // 保存簽章以便驗證
+    window.eccSignature = { r: r, s: s, m: m };
+  });
+
+  // [3] ECDSA 驗證
+  document.getElementById("ecc-verify-button").addEventListener("click", () => {
+    // 修正：每次驗證前先清空詳細流程區，避免累積舊資料
+    eccDetailedSteps.innerText = "";
+    eccVerifyInfo.innerText = "";
+
+    if (!window.eccSignature) {
+      alert("請先產生簽章");
+      return;
+    }
+    const { r, s, m } = window.eccSignature;
+    let processLog = [];
+    processLog.push(`驗證簽章 (r, s) 是否有效：`);
+
+    // 計算 w = s^{-1} mod order
+    let w = modInverse(s, eccOrder);
+    processLog.push(`計算 w = s^{-1} mod order = ${w}`);
+    let u1 = (m * w) % eccOrder;
+    let u2 = (r * w) % eccOrder;
+    processLog.push(`u1 = m * w mod order = ${u1}`);
+    processLog.push(`u2 = r * w mod order = ${u2}`);
+
+    // 計算 P = u1 * G + u2 * Q
+    let point1 = eccScalarMult(u1, eccG, eccP, eccA);
+    let point2 = eccScalarMult(u2, eccPublicKey, eccP, eccA);
+    let P = eccPointAdd(point1, point2, eccP, eccA);
+    processLog.push(`計算 P = u1 * G + u2 * Q = (${P.x}, ${P.y})`);
+
+    processLog.push(`驗證 r ?= P.x mod order: ${r} ?= ${P.x % eccOrder}`);
+    if (r === (P.x % eccOrder)) {
+      processLog.push(`簽章驗證成功！`);
+    } else {
+      processLog.push(`簽章驗證失敗！`);
+    }
+    eccVerifyInfo.innerText = processLog.join("\n");
+
+    eccDetailedSteps.innerText = `
+【ECDSA 驗證過程】
+
+1) 已知簽章 (r, s) 與訊息 m
+2) 計算 w = s^{-1} mod order = ${w}
+3) 計算 u1 = m * w mod order = ${u1}
+4) 計算 u2 = r * w mod order = ${u2}
+5) 計算 P = u1 * G + u2 * Q = (${P.x}, ${P.y})
+6) 驗證：檢查 r 是否等於 P.x mod order
+   r = ${r}, P.x mod order = ${P.x % eccOrder}
+    `.trim();
+  });
+</script>
+</body>
+</html>

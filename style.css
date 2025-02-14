@@ -1,157 +1,126 @@
-{\rtf1\ansi\ansicpg950\cocoartf2820
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
-\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
-\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural\partightenfactor0
+/* style.css - 全新設計 */
 
-\f0\fs24 \cf0 /* Google Fonts \uc0\u21487 \u33258 \u34892 \u35519 \u25972 \u21916 \u22909 \u23383 \u39636  */\
-@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap");\
-\
-/* \uc0\u37325 \u32622 \u37096 \u20998 \u38928 \u35373 \u27171 \u24335 \u65292 \u28187 \u23569 \u28687 \u35261 \u22120 \u24046 \u30064  */\
-* \{\
-  margin: 0;\
-  padding: 0;\
-  box-sizing: border-box;\
-\}\
-\
-/* \uc0\u38928 \u35373  body\u12289 html \u39640 \u24230  100%\u65292 \u21152 \u19978 \u32972 \u26223 \u28472 \u23652  */\
-html, body \{\
-  height: 100%;\
-  font-family: "Poppins", Arial, sans-serif;\
-  background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);\
-  color: #eee;\
-\}\
-\
-/* \uc0\u38913 \u38754 \u20027 \u35201 \u23481 \u22120 \u65292 \u32622 \u20013 \u33287 \u26368 \u22823 \u23532 \u24230  */\
-.container \{\
-  max-width: 900px;\
-  margin: 0 auto;\
-  padding: 40px 20px;\
-\}\
-\
-/* \uc0\u22823 \u27161 \u38988  */\
-h1 \{\
-  font-weight: 600;\
-  font-size: 2.2rem;\
-  margin-bottom: 20px;\
-  color: #ffffff;\
-  text-align: center;\
-\}\
-\
-/* \uc0\u21312 \u22602 \u27161 \u38988  h2, h3 */\
-h2, h3 \{\
-  font-weight: 500;\
-  margin-bottom: 10px;\
-  color: #ffffff;\
-\}\
-\
-/* \uc0\u21312 \u22602 \u26694  (\u21345 \u29255 \u39080 \u26684 ) */\
-.box \{\
-  background: rgba(255, 255, 255, 0.05);\
-  border-radius: 12px;\
-  padding: 20px;\
-  margin-bottom: 25px;\
-  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3);\
-  backdrop-filter: blur(6px); /* \uc0\u29627 \u29827 \u38695 \u38754 \u25928 \u26524 \u65288 \u26377 \u20123 \u28687 \u35261 \u22120 \u26371 \u19981 \u25903 \u25588 \u65289  */\
-\}\
-\
-/* \uc0\u19968 \u33324 \u27573 \u33853  */\
-p \{\
-  line-height: 1.6;\
-  margin-bottom: 15px;\
-  color: #ccc;\
-\}\
-\
-/* \uc0\u25353 \u37397 \u65292 \u24118 \u40670 \u38675 \u34425 \u24863  */\
-button \{\
-  display: inline-block;\
-  cursor: pointer;\
-  font-size: 1rem;\
-  font-weight: 500;\
-  text-transform: uppercase;\
-  color: #fff;\
-  background: none;\
-  border: 2px solid #0ff;\
-  padding: 12px 20px;\
-  border-radius: 50px;\
-  letter-spacing: 1px;\
-  transition: all 0.3s ease;\
-  position: relative;\
-  overflow: hidden;\
-\}\
-\
-/* \uc0\u25353 \u37397 \u38675 \u34425 \u25928 \u26524 \u65306 hover \u26178 \u20570 \u22806 \u26694 +\u32972 \u26223  */\
-button:hover \{\
-  background: #0ff;\
-  color: #000;\
-  box-shadow: 0 0 20px #0ff, 0 0 40px #0ff, 0 0 60px #0ff;\
-  transform: translateY(-2px);\
-\}\
-\
-button:active \{\
-  transform: scale(0.98);\
-\}\
-\
-/* \uc0\u36664 \u20837 \u26694  */\
-input[type="text"] \{\
-  width: 100%;\
-  padding: 10px 15px;\
-  font-size: 1rem;\
-  border: 2px solid transparent;\
-  border-radius: 8px;\
-  outline: none;\
-  transition: border 0.3s ease;\
-\}\
-\
-/* \uc0\u32858 \u28966 \u36664 \u20837 \u26694 \u26178 \u65292 \u39023 \u31034 \u38991 \u33394 \u37002 \u26694  */\
-input[type="text"]:focus \{\
-  border-color: #0ff;\
-\}\
-\
-/* pre \uc0\u21312 \u22602 \u65292 \u25918 \u35336 \u31639 \u27493 \u39519 \u25110 \u32080 \u26524  */\
-pre \{\
-  background: rgba(255, 255, 255, 0.08);\
-  padding: 15px;\
-  border-radius: 8px;\
-  font-size: 0.95rem;\
-  line-height: 1.5;\
-  color: #fff;\
-  overflow-x: auto;\
-  white-space: pre-wrap;  /* \uc0\u35731 \u25563 \u34892 \u33258 \u21205 \u26039 \u34892  */\
-  word-wrap: break-word;\
-  max-height: 400px;      /* \uc0\u33509 \u20839 \u23481 \u36942 \u22810 \u65292 \u20986 \u29694 \u25458 \u36600  */\
-\}\
-\
-/* \uc0\u27161 \u31844  <label> \u30340 \u23567 \u35519 \u25972  */\
-label \{\
-  font-weight: 500;\
-  margin-bottom: 5px;\
-  display: inline-block;\
-  color: #fff;\
-\}\
-\
-/* \uc0\u23567 \u25552 \u31034 \u65306 \u33509 \u35201 \u22312  box \u35041 \u22686 \u21152 \u19968 \u20123 \u20839 \u25991 \u20998 \u38548 \u32218 \u21487 \u20197 \u36889 \u27171 \u20570  */\
-.box hr \{\
-  border: none;\
-  border-top: 1px solid rgba(255, 255, 255, 0.2);\
-  margin: 20px 0;\
-\}\
-\
-/* \uc0\u21487 \u20197 \u21152 \u19978  footer \u25928 \u26524 \u65292 \u30475 \u36215 \u20358 \u26356 \u23436 \u25972  (index.html \u35041 \u33509 \u35201 \u21152 ) */\
-footer \{\
-  text-align: center;\
-  margin-top: 40px;\
-  color: #aaa;\
-  font-size: 0.9rem;\
-\}\
-\
-footer a \{\
-  color: #0ff;\
-  text-decoration: none;\
-\}\
-\
-footer a:hover \{\
-  text-decoration: underline;\
-\}\
+/* 基本重置與字型設定 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f5f5f5;
+  color: #333;
+  line-height: 1.6;
+}
+
+/* 主容器 */
+.container {
+  max-width: 800px;
+  margin: 30px auto;
+  padding: 20px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 頁面標題 */
+h1 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #2c3e50;
+}
+
+h2, h3 {
+  margin-bottom: 10px;
+  color: #2c3e50;
+}
+
+/* 導航區塊 */
+nav {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+nav a {
+  margin: 0 12px;
+  color: #3498db;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+nav a:hover {
+  text-decoration: underline;
+}
+
+/* 內容區塊 */
+.box {
+  background-color: #fafafa;
+  border: 1px solid #ddd;
+  padding: 20px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+}
+
+/* 按鈕 */
+button {
+  display: inline-block;
+  background-color: #3498db;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  margin-top: 8px;
+}
+
+button:hover {
+  background-color: #2980b9;
+}
+
+/* 輸入欄位 */
+input[type="text"] {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+  margin-top: 4px;
+  margin-bottom: 12px;
+}
+
+/* 預格式文字區 */
+pre {
+  background-color: #ecf0f1;
+  padding: 15px;
+  border-radius: 4px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  margin-bottom: 15px;
+}
+
+/* 標籤 */
+label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: bold;
+}
+
+/* 頁尾 */
+footer {
+  text-align: center;
+  margin-top: 30px;
+  color: #777;
+  font-size: 0.9rem;
+}
+
+footer a {
+  color: #3498db;
+  text-decoration: none;
+}
+
+footer a:hover {
+  text-decoration: underline;
 }
